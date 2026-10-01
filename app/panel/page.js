@@ -1,47 +1,33 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import Logo from '@/components/Logo';
+import PanelHeader from '@/components/PanelHeader';
 import { ParejaPanel, ProveedorPanel } from '@/components/PanelViews';
-import { signOut } from './actions';
+import { getPanelContext } from '@/lib/panel';
+import { todayIso } from '@/lib/vendor';
 
 export const metadata = { title: 'Mi panel' };
 export const dynamic = 'force-dynamic';
 
-function PanelHeader({ name }) {
-  return (
-    <header className="site-header">
-      <nav className="container nav" aria-label="Panel">
-        <Link href="/" className="brand">
-          <Logo />
-          <span className="brand-name">Brindis</span>
-        </Link>
-        <div className="nav-actions">
-          <span className="nav-login" style={{ fontWeight: 500 }}>{name}</span>
-          <form action={signOut}>
-            <button type="submit" className="btn btn-outline btn-sm">Salir</button>
-          </form>
-        </div>
-      </nav>
-    </header>
-  );
-}
-
 export default async function PanelPage() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) redirect('/ingresar');
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/ingresar');
-
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-  const safeProfile = profile || { full_name: user.user_metadata?.full_name || '', role: user.user_metadata?.role || 'pareja' };
+  const { supabase, user, profile, vendor } = await getPanelContext();
 
   let content;
-  if (safeProfile.role === 'proveedor') {
-    const { data: vendor } = await supabase.from('vendors').select('*').eq('owner_id', user.id).maybeSingle();
-    content = <ProveedorPanel profile={safeProfile} vendor={vendor} />;
+  if (profile.role === 'proveedor') {
+    let stats = { photos: 0, packages: 0, busyDays: 0, cover: null };
+    if (vendor) {
+      const [photos, packages, busy] = await Promise.all([
+        supabase.from('vendor_photos').select('path', { count: 'exact' }).eq('vendor_id', vendor.id).order('position', { ascending: true }).limit(1),
+        supabase.from('vendor_packages').select('id', { count: 'exact', head: true }).eq('vendor_id', vendor.id),
+        supabase.from('vendor_availability').select('day', { count: 'exact', head: true }).eq('vendor_id', vendor.id).gte('day', todayIso()),
+      ]);
+      stats = {
+        photos: photos.count || 0,
+        packages: packages.count || 0,
+        busyDays: busy.count || 0,
+        cover: photos.data?.[0]?.path || null,
+      };
+    }
+    content = (
+      <ProveedorPanel profile={profile} vendor={vendor} stats={stats} />
+    );
   } else {
     const { data: events } = await supabase
       .from('events')
@@ -49,13 +35,13 @@ export default async function PanelPage() {
       .eq('owner_id', user.id)
       .order('created_at', { ascending: true })
       .limit(1);
-    content = <ParejaPanel profile={safeProfile} event={events?.[0]} />;
+    content = <ParejaPanel profile={profile} event={events?.[0]} />;
   }
 
   return (
     <>
-      <PanelHeader name={safeProfile.full_name || user.email} />
-      <main className="container" style={{ paddingTop: 48, paddingBottom: 88 }}>
+      <PanelHeader name={profile.full_name || user.email} />
+      <main className="container" style={{ paddingTop: 40, paddingBottom: 88 }}>
         {content}
       </main>
     </>

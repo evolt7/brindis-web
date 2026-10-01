@@ -1,6 +1,6 @@
 import './globals.css';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://brindis.ec';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.brindis.fun';
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
