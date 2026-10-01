@@ -22,7 +22,9 @@ export default function Footer() {
             <strong>Contacto</strong>
             <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
             <a href={`https://wa.me/${CONTACT.whatsapp}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-            <a href={`https://instagram.com/${CONTACT.instagram}`} target="_blank" rel="noopener noreferrer">Instagram</a>
+            {CONTACT.instagram && (
+              <a href={`https://instagram.com/${CONTACT.instagram}`} target="_blank" rel="noopener noreferrer">Instagram</a>
+            )}
           </div>
         </div>
       </div>
