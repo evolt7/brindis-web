@@ -13,9 +13,13 @@ export default async function IngresarPage({ searchParams }) {
         <div className="auth-card auth-card-sm stack gap-24">
           <div className="stack gap-8">
             <h1 className="h2" style={{ fontSize: 36 }}>Ingresa a Brindis</h1>
-            <p className="body">Con el correo y la clave de tu cuenta.</p>
+            <p className="body">
+              {typeof sp.next === 'string' && sp.next.startsWith('/proveedores')
+                ? 'Ingresa para guardar proveedores en tu evento.'
+                : 'Con el correo y la clave de tu cuenta.'}
+            </p>
           </div>
-          <LoginForm linkError={sp.error === 'enlace'} />
+          <LoginForm linkError={sp.error === 'enlace'} next={typeof sp.next === 'string' ? sp.next : ''} />
           <p className="body" style={{ textAlign: 'center', fontSize: 15 }}>
             ¿No tienes cuenta? <Link href="/registro">Créala gratis</Link>
           </p>

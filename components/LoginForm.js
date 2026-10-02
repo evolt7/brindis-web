@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient, supabaseConfigured, friendlyError } from '@/lib/supabase/client';
 
-export default function LoginForm({ linkError = false }) {
+function safeNext(next) {
+  return typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') ? next : '/panel';
+}
+
+export default function LoginForm({ linkError = false, next = '' }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(
@@ -31,7 +35,7 @@ export default function LoginForm({ linkError = false }) {
       setError(friendlyError(err));
       return;
     }
-    router.push('/panel');
+    router.push(safeNext(next));
     router.refresh();
   }
 

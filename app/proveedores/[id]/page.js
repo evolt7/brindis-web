@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import VendorPublicView from '@/components/VendorPublicView';
 import { createClient } from '@/lib/supabase/server';
 import { photoUrl } from '@/lib/vendor';
+import { getPlannerContext } from '@/lib/catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,9 +37,13 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function ProveedorPublicPage({ params }) {
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+export default async function ProveedorPublicPage({ params, searchParams }) {
   const { id } = await params;
-  const data = await loadVendor(id);
+  const sp = (await searchParams) || {};
+  const [data, planner] = await Promise.all([loadVendor(id), getPlannerContext()]);
   if (!data) notFound();
-  return <VendorPublicView {...data} />;
+  const fecha = typeof sp.fecha === 'string' && ISO.test(sp.fecha) ? sp.fecha : '';
+  return <VendorPublicView {...data} planner={planner} fecha={fecha} />;
 }

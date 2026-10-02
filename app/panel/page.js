@@ -35,7 +35,24 @@ export default async function PanelPage() {
       .eq('owner_id', user.id)
       .order('created_at', { ascending: true })
       .limit(1);
-    content = <ParejaPanel profile={profile} event={events?.[0]} />;
+    const event = events?.[0];
+    let saved = [];
+    if (event) {
+      const { data: rows } = await supabase
+        .from('event_vendors')
+        .select('id,status,created_at,vendor:vendors(id,business_name,category,city,price_from)')
+        .eq('event_id', event.id)
+        .order('created_at', { ascending: true });
+      saved = rows || [];
+      const ids = saved.map((r) => r.vendor?.id).filter(Boolean);
+      if (ids.length) {
+        const { data: photos } = await supabase.from('vendor_photos').select('vendor_id,path,position').in('vendor_id', ids).order('position', { ascending: true });
+        const covers = new Map();
+        for (const p of photos || []) if (!covers.has(p.vendor_id)) covers.set(p.vendor_id, p.path);
+        saved = saved.map((r) => ({ ...r, cover: covers.get(r.vendor?.id) || null }));
+      }
+    }
+    content = <ParejaPanel profile={profile} event={event} saved={saved} />;
   }
 
   return (

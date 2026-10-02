@@ -17,6 +17,8 @@ Landing page, registro de parejas y proveedores, ingreso y panel. Hecho con Next
 | `/proveedores/[id]` | Página pública de cada proveedor (solo aprobados; el dueño ve una vista previa). |
 | `supabase/schema.sql` | Tablas, reglas de seguridad y el alta automática de cada cuenta. |
 | `supabase/002_perfil_proveedor.sql` | Fotos, paquetes, calendario y el espacio para guardar las fotos. |
+| `/proveedores` | Catálogo para parejas: filtros por fecha, categoría, ciudad e invitados; con fecha, solo muestra a los libres. |
+| `supabase/003_eventos_proveedores.sql` | Proveedores que cada pareja guarda en su evento ("Agregar a mi evento"). |
 
 ## Publicar la web, paso a paso
 
@@ -36,7 +38,7 @@ Todo se hace desde el navegador; no necesitas instalar nada. Calcula una o dos t
 ### 3. Supabase (cuentas y base de datos)
 
 1. Crea una cuenta en supabase.com y un proyecto nuevo llamado `brindis`. Región: la más cercana a Ecuador que ofrezca (por ejemplo, São Paulo o este de EE. UU.). Guarda la contraseña de la base de datos en un lugar seguro.
-2. Ve a **SQL Editor › New query**, pega todo el contenido de `supabase/schema.sql` y presiona **Run**. Debe decir "Success". Repite con `supabase/002_perfil_proveedor.sql` en una consulta nueva.
+2. Ve a **SQL Editor › New query**, pega todo el contenido de `supabase/schema.sql` y presiona **Run**. Debe decir "Success". Repite, en ese orden y cada uno en una consulta nueva, con `supabase/002_perfil_proveedor.sql` y `supabase/003_eventos_proveedores.sql`.
 3. Ve a **Project Settings › API** y copia:
    - **Project URL** → será `NEXT_PUBLIC_SUPABASE_URL`
    - **anon / publishable key** → será `NEXT_PUBLIC_SUPABASE_ANON_KEY`

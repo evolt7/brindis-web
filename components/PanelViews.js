@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { CONTACT } from '@/lib/config';
-import { photoUrl } from '@/lib/vendor';
+import { photoUrl, formatPriceFrom } from '@/lib/vendor';
 import VendorTabs from '@/components/VendorTabs';
+import RemoveSavedButton from '@/components/RemoveSavedButton';
 
 function formatDate(iso) {
   if (!iso) return 'Por definir';
@@ -19,9 +20,48 @@ function daysUntil(iso) {
 
 const vendorChecklist = ['Venue o hacienda', 'Catering', 'Música y DJ', 'Fotografía y video', 'Flores y decoración', 'Pastel y dulces'];
 
-export function ParejaPanel({ profile, event }) {
+const STATUS_LABEL = { guardado: 'Guardado', cotizando: 'En cotización', reservado: 'Reservado' };
+const STATUS_CLASS = { guardado: 'badge-wine', cotizando: 'badge-wait', reservado: 'badge-ok' };
+
+function catalogLink(event, categoria) {
+  const p = new URLSearchParams();
+  const today = new Date().toISOString().slice(0, 10);
+  if (event?.event_date && event.event_date >= today) p.set('fecha', event.event_date);
+  if (event?.city) p.set('ciudad', event.city);
+  if (event?.guests) p.set('invitados', event.guests);
+  if (categoria) p.set('categoria', categoria);
+  const q = p.toString();
+  return q ? `/proveedores?${q}` : '/proveedores?ver=todos';
+}
+
+function SavedRow({ item, event }) {
+  const v = item.vendor;
+  return (
+    <div className="saved-row">
+      {item.cover ? <img src={photoUrl(item.cover)} alt="" className="saved-thumb" /> : <span className="saved-thumb" aria-hidden="true" />}
+      <div className="stack" style={{ gap: 2, flexGrow: 1, minWidth: 0 }}>
+        <Link href={`/proveedores/${v.id}`} className="vendor-name" style={{ color: 'var(--ink)' }}>{v.business_name}</Link>
+        <span className="hint">{v.price_from ? `Desde ${formatPriceFrom(v.price_from)}` : v.city || ''}</span>
+      </div>
+      <span className={`badge ${STATUS_CLASS[item.status] || 'badge-wine'}`}>{STATUS_LABEL[item.status] || item.status}</span>
+      {item.status === 'guardado' && <RemoveSavedButton eventId={event.id} vendorId={v.id} name={v.business_name} />}
+    </div>
+  );
+}
+
+export function ParejaPanel({ profile, event, saved = [] }) {
   const days = daysUntil(event?.event_date);
   const firstName = (profile.full_name || '').split(' ')[0] || 'hola';
+  const byCat = new Map();
+  for (const item of saved) {
+    if (!item.vendor) continue;
+    const cat = vendorChecklist.includes(item.vendor.category) ? item.vendor.category : 'Otros';
+    if (!byCat.has(cat)) byCat.set(cat, []);
+    byCat.get(cat).push(item);
+  }
+  const categories = [...vendorChecklist, ...(byCat.has('Otros') ? ['Otros'] : [])];
+  const covered = vendorChecklist.filter((c) => byCat.has(c)).length;
+
   return (
     <div className="stack gap-32">
       <div className="stack gap-8">
@@ -43,27 +83,51 @@ export function ParejaPanel({ profile, event }) {
             <div><dt>Presupuesto</dt><dd>{event?.budget || 'Por definir'}</dd></div>
           </dl>
           <div className="divider" />
-          <h3 className="h3" style={{ fontSize: 17 }}>Tus proveedores</h3>
-          <div className="stack gap-12">
-            {vendorChecklist.map((c) => (
-              <div className="vendor-row" key={c}>
-                <span className="vendor-name">{c}</span>
-                <span className="badge badge-wine">Por elegir</span>
-              </div>
-            ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', flexWrap: 'wrap' }}>
+            <h3 className="h3" style={{ fontSize: 17 }}>Tus proveedores</h3>
+            <span className="hint">{covered} de {vendorChecklist.length} categorías con opciones</span>
+          </div>
+          <div className="stack gap-16">
+            {categories.map((c) => {
+              const items = byCat.get(c) || [];
+              return (
+                <div key={c} className="stack gap-8">
+                  <div className="vendor-row">
+                    <span className="vendor-cat">{c}</span>
+                    {c !== 'Otros' && (
+                      <Link href={catalogLink(event, c)} style={{ fontSize: 14, fontWeight: 600 }}>
+                        {items.length ? 'Ver más' : 'Buscar'}
+                      </Link>
+                    )}
+                  </div>
+                  {items.length ? (
+                    items.map((item) => <SavedRow key={item.id} item={item} event={event} />)
+                  ) : (
+                    <span className="body" style={{ fontSize: 14 }}>Todavía no eliges.</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
         <div className="stack gap-16">
+          <div className="promo promo-wine" style={{ padding: 28 }}>
+            <h3 style={{ fontSize: 24 }}>Encuentra quién está libre</h3>
+            <p className="body" style={{ fontSize: 15, color: '#F7EAF0' }}>
+              {event?.event_date
+                ? 'Te mostramos solo los proveedores disponibles en tu fecha.'
+                : 'Elige tu fecha y te mostramos solo los proveedores disponibles.'}
+            </p>
+            <Link href={catalogLink(event)} className="btn btn-light btn-sm" style={{ alignSelf: 'flex-start' }}>
+              Explorar proveedores
+            </Link>
+          </div>
           <div className="promo promo-blush" style={{ padding: 28 }}>
-            <h3 style={{ fontSize: 24 }}>Qué sigue</h3>
-            <ol className="steps">
-              <li>Revisamos qué proveedores están libres para tu fecha.</li>
-              <li>Te escribimos por WhatsApp con opciones y precios.</li>
-              <li>Eliges, reservas y lo verás aquí en tu tablero.</li>
-            </ol>
+            <h3 style={{ fontSize: 22 }}>¿Prefieres que te ayudemos?</h3>
+            <p className="body" style={{ fontSize: 15 }}>Cuéntanos qué buscas y te enviamos opciones con precios por WhatsApp.</p>
             <a
-              href={`https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hola Brindis, acabo de crear mi cuenta y quiero ver proveedores para mi evento.')}`}
+              href={`https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hola Brindis, quiero ayuda para elegir proveedores para mi evento.')}`}
               className="btn btn-primary btn-sm"
               style={{ alignSelf: 'flex-start' }}
               target="_blank"
@@ -71,12 +135,6 @@ export function ParejaPanel({ profile, event }) {
             >
               Escribir por WhatsApp
             </a>
-          </div>
-          <div className="card stack gap-8">
-            <span style={{ fontWeight: 700 }}>Muy pronto en tu panel</span>
-            <span className="body" style={{ fontSize: 15 }}>
-              Catálogo con disponibilidad por fecha, presupuesto, lista de invitados y mapa de mesas.
-            </span>
           </div>
         </div>
       </div>

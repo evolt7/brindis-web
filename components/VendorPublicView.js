@@ -3,7 +3,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AvailabilityCalendar from '@/components/AvailabilityCalendar';
 import { CONTACT } from '@/lib/config';
-import { photoUrl, formatPrice } from '@/lib/vendor';
+import { photoUrl, formatPrice, formatLongDate } from '@/lib/vendor';
+import AddToEventButton from '@/components/AddToEventButton';
 
 function priceFrom(raw) {
   const txt = String(raw).trim();
@@ -20,17 +21,22 @@ function socialLink(social) {
   return { href: null, label: s };
 }
 
-export default function VendorPublicView({ vendor, photos, packages, busy, isOwner }) {
+export default function VendorPublicView({ vendor, photos, packages, busy, isOwner, planner = { kind: 'anon' }, fecha = '' }) {
   const approved = vendor.status === 'aprobado';
   const social = socialLink(vendor.social);
-  const waText = encodeURIComponent(`Hola Brindis, me interesa ${vendor.business_name}. Mi evento es el (fecha) para (número) invitados.`);
+  const eventDate = fecha || (planner.kind === 'pareja' && planner.event?.event_date) || '';
+  const busyOnDate = eventDate ? busy.some((b) => b.day === eventDate) : false;
+  const waText = encodeURIComponent(
+    `Hola Brindis, me interesa ${vendor.business_name}. Mi evento es el ${eventDate ? formatLongDate(eventDate).toLowerCase() : '(fecha)'} para (número) invitados.`
+  );
   const [cover, ...rest] = photos;
 
   return (
     <>
       <Header />
       <main className="container" style={{ paddingTop: 32, paddingBottom: 88 }}>
-        <div className="stack gap-32">
+        <div className="stack gap-24">
+          <Link href={fecha ? `/proveedores?fecha=${fecha}` : '/proveedores'} style={{ fontSize: 15, fontWeight: 600, alignSelf: 'flex-start' }}>‹ Ver más proveedores</Link>
           {isOwner && !approved && (
             <div className="alert" style={{ background: '#FBEFD9', color: '#7A4B00' }} role="status">
               <strong>Vista previa.</strong> Así se verá tu página cuando aprobemos tu negocio. Por ahora solo tú puedes verla.{' '}
@@ -104,21 +110,35 @@ export default function VendorPublicView({ vendor, photos, packages, busy, isOwn
               <div className="stack gap-16">
                 <h2 className="h3" style={{ fontSize: 24 }}>Disponibilidad</h2>
                 <div className="card">
-                  <AvailabilityCalendar vendorId={vendor.id} initialBusy={busy} editable={false} months={2} maxAhead={18} />
+                  <AvailabilityCalendar vendorId={vendor.id} initialBusy={busy} editable={false} months={2} maxAhead={18} initialCheck={eventDate} />
                 </div>
               </div>
             </div>
 
             <aside className="cta-card">
               <span style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600 }}>¿Te gusta para tu evento?</span>
+              {eventDate && (
+                <span className={`badge ${busyOnDate ? 'badge-wine' : 'badge-ok'}`} style={{ alignSelf: 'flex-start' }}>
+                  {busyOnDate ? 'Ocupado' : 'Libre'} el {formatLongDate(eventDate).toLowerCase()}
+                </span>
+              )}
+              {!isOwner && planner.kind !== 'vendor' && approved && (
+                <AddToEventButton vendorId={vendor.id} planner={planner} returnTo={`/proveedores/${vendor.id}${fecha ? `?fecha=${fecha}` : ''}`} size="md" block />
+              )}
               <p className="body" style={{ fontSize: 15 }}>
                 Cuéntanos tu fecha y número de invitados. Confirmamos la disponibilidad y te enviamos la cotización por WhatsApp.
               </p>
-              <a href={`https://wa.me/${CONTACT.whatsapp}?text=${waText}`} className="btn btn-primary btn-block" target="_blank" rel="noopener noreferrer">
-                Pedir cotización
+              <a href={`https://wa.me/${CONTACT.whatsapp}?text=${waText}`} className="btn btn-outline btn-block btn-sm" target="_blank" rel="noopener noreferrer">
+                Pedir cotización por WhatsApp
               </a>
-              <Link href="/registro/pareja" className="btn btn-outline btn-block btn-sm">Crear mi cuenta gratis</Link>
-              <span className="hint" style={{ textAlign: 'center' }}>Sin costo para parejas y familias.</span>
+              {planner.kind === 'anon' && (
+                <span className="hint" style={{ textAlign: 'center' }}>
+                  ¿No tienes cuenta? <Link href="/registro/pareja">Créala gratis</Link> y guarda proveedores en tu evento.
+                </span>
+              )}
+              {planner.kind === 'pareja' && (
+                <Link href="/panel" className="hint" style={{ textAlign: 'center' }}>Ver mi evento</Link>
+              )}
             </aside>
           </div>
         </div>

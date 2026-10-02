@@ -44,14 +44,14 @@ function MonthGrid({ year, month, busy, today, editable, pending, onToggle }) {
   );
 }
 
-export default function AvailabilityCalendar({ vendorId, initialBusy = [], editable = false, months = 2, maxAhead = 24 }) {
+export default function AvailabilityCalendar({ vendorId, initialBusy = [], editable = false, months = 2, maxAhead = 24, initialCheck = '' }) {
   const today = todayIso();
   const now = new Date();
   const [offset, setOffset] = useState(0);
   const [busy, setBusy] = useState(() => new Map(initialBusy.map((r) => [r.day, r.status])));
   const [pending, setPending] = useState(() => new Set());
   const [error, setError] = useState('');
-  const [check, setCheck] = useState('');
+  const [check, setCheck] = useState(initialCheck || '');
 
   const visible = useMemo(() => {
     const out = [];

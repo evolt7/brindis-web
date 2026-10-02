@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { EVENT_TYPES, CITIES, GUEST_RANGES } from '@/lib/config';
+import { VENDOR_CATEGORIES, CITIES, GUEST_RANGES } from '@/lib/config';
 
 const sampleVendors = [
   { cat: 'Venue', name: 'Hacienda en Tumbaco', status: 'Reservado', ok: true },
@@ -113,11 +113,12 @@ export default function Home() {
             </div>
           </div>
 
-          <form className="search-bar" action="/registro/pareja" method="get" aria-label="Buscar proveedores disponibles">
+          <form className="search-bar" action="/proveedores" method="get" aria-label="Buscar proveedores disponibles">
             <div className="field">
-              <label htmlFor="f-tipo">Tipo de evento</label>
-              <select id="f-tipo" name="tipo" className="select" defaultValue="Boda">
-                {EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}
+              <label htmlFor="f-tipo">Qué buscas</label>
+              <select id="f-tipo" name="categoria" className="select" defaultValue="">
+                <option value="">Todos los proveedores</option>
+                {VENDOR_CATEGORIES.map((t) => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div className="field">
@@ -184,7 +185,7 @@ export default function Home() {
               <p className="body" style={{ color: '#F7EAF0' }}>
                 Venue, comida, música, fotografía y decoración ya coordinados entre sí. Eliges el paquete, ajustas lo que quieras y reservas todo de una vez.
               </p>
-              <Link href="/registro/pareja" className="btn btn-light btn-sm" style={{ alignSelf: 'flex-start', marginTop: 8 }}>Ver paquetes</Link>
+              <Link href="/proveedores" className="btn btn-light btn-sm" style={{ alignSelf: 'flex-start', marginTop: 8 }}>Ver proveedores</Link>
             </div>
             <div className="promo promo-blush">
               <span className="eyebrow">Fechas con descuento</span>
