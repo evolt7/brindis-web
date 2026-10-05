@@ -13,6 +13,7 @@ export default function VendorCard({ vendor, planner, fecha, returnTo }) {
           <span className="vendor-card-placeholder">Sin fotos todavía</span>
         )}
         {fecha && <span className="badge badge-ok vendor-card-badge">Libre en tu fecha</span>}
+        {vendor.is_demo && <span className="badge badge-demo vendor-card-demo">Perfil de ejemplo</span>}
       </Link>
       <div className="vendor-card-body">
         <span className="vendor-cat">{[vendor.category, vendor.city].filter(Boolean).join(' · ')}</span>
@@ -25,7 +26,7 @@ export default function VendorCard({ vendor, planner, fecha, returnTo }) {
           {vendor.capacity_max && <span>Hasta {vendor.capacity_max} invitados</span>}
         </div>
         <div className="vendor-card-actions">
-          <AddToEventButton vendorId={vendor.id} planner={planner} returnTo={returnTo} />
+          {!vendor.is_demo && <AddToEventButton vendorId={vendor.id} planner={planner} returnTo={returnTo} />}
           <Link href={href} className="btn btn-outline btn-sm">Ver perfil</Link>
         </div>
       </div>

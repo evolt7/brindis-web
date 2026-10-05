@@ -30,6 +30,7 @@ export default function VendorPublicView({ vendor, photos, packages, busy, isOwn
     `Hola Brindis, me interesa ${vendor.business_name}. Mi evento es el ${eventDate ? formatLongDate(eventDate).toLowerCase() : '(fecha)'} para (número) invitados.`
   );
   const [cover, ...rest] = photos;
+  const shownInGallery = rest.length < 4 ? Math.min(rest.length, 2) : 4;
 
   return (
     <>
@@ -37,6 +38,11 @@ export default function VendorPublicView({ vendor, photos, packages, busy, isOwn
       <main className="container" style={{ paddingTop: 32, paddingBottom: 88 }}>
         <div className="stack gap-24">
           <Link href={fecha ? `/proveedores?fecha=${fecha}` : '/proveedores'} style={{ fontSize: 15, fontWeight: 600, alignSelf: 'flex-start' }}>‹ Ver más proveedores</Link>
+          {vendor.is_demo && (
+            <div className="alert" style={{ background: '#EEF1F7', color: '#2E3A59' }} role="status">
+              <strong>Perfil de ejemplo.</strong> Este negocio no existe: lo creamos para mostrar cómo se ve un proveedor en Brindis. Los precios son referenciales del mercado en Quito.
+            </div>
+          )}
           {isOwner && !approved && (
             <div className="alert" style={{ background: '#FBEFD9', color: '#7A4B00' }} role="status">
               <strong>Vista previa.</strong> Así se verá tu página cuando aprobemos tu negocio. Por ahora solo tú puedes verla.{' '}
@@ -45,9 +51,9 @@ export default function VendorPublicView({ vendor, photos, packages, busy, isOwn
           )}
 
           {cover ? (
-            <div className={`gallery ${rest.length ? '' : 'gallery-single'}`}>
+            <div className={`gallery ${rest.length === 0 ? 'gallery-single' : rest.length < 4 ? `gallery-compact${rest.length === 1 ? ' gallery-one' : ''}` : ''}`}>
               <img src={photoUrl(cover.path)} alt={`${vendor.business_name}, foto principal`} className="gallery-main" />
-              {rest.slice(0, 4).map((p, i) => (
+              {rest.slice(0, shownInGallery).map((p, i) => (
                 <img key={p.id} src={photoUrl(p.path)} alt={`${vendor.business_name}, foto ${i + 2}`} loading="lazy" />
               ))}
             </div>
@@ -74,12 +80,12 @@ export default function VendorPublicView({ vendor, photos, packages, busy, isOwn
                 {vendor.description && <p className="lead" style={{ fontSize: 17, whiteSpace: 'pre-line' }}>{vendor.description}</p>}
               </div>
 
-              {rest.length > 4 && (
+              {rest.length > shownInGallery && (
                 <div className="stack gap-12">
                   <h2 className="h3">Más fotos</h2>
                   <div className="photo-grid">
-                    {rest.slice(4).map((p, i) => (
-                      <figure key={p.id} className="photo-item"><img src={photoUrl(p.path)} alt={`${vendor.business_name}, foto ${i + 6}`} loading="lazy" /></figure>
+                    {rest.slice(shownInGallery).map((p, i) => (
+                      <figure key={p.id} className="photo-item"><img src={photoUrl(p.path)} alt={`${vendor.business_name}, foto ${i + shownInGallery + 2}`} loading="lazy" /></figure>
                     ))}
                   </div>
                 </div>
@@ -115,31 +121,50 @@ export default function VendorPublicView({ vendor, photos, packages, busy, isOwn
               </div>
             </div>
 
-            <aside className="cta-card">
-              <span style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600 }}>¿Te gusta para tu evento?</span>
-              {eventDate && (
-                <span className={`badge ${busyOnDate ? 'badge-wine' : 'badge-ok'}`} style={{ alignSelf: 'flex-start' }}>
-                  {busyOnDate ? 'Ocupado' : 'Libre'} el {formatLongDate(eventDate).toLowerCase()}
-                </span>
-              )}
-              {!isOwner && planner.kind !== 'vendor' && approved && (
-                <AddToEventButton vendorId={vendor.id} planner={planner} returnTo={`/proveedores/${vendor.id}${fecha ? `?fecha=${fecha}` : ''}`} size="md" block />
-              )}
-              <p className="body" style={{ fontSize: 15 }}>
-                Cuéntanos tu fecha y número de invitados. Confirmamos la disponibilidad y te enviamos la cotización por WhatsApp.
-              </p>
-              <a href={`https://wa.me/${CONTACT.whatsapp}?text=${waText}`} className="btn btn-outline btn-block btn-sm" target="_blank" rel="noopener noreferrer">
-                Pedir cotización por WhatsApp
-              </a>
-              {planner.kind === 'anon' && (
-                <span className="hint" style={{ textAlign: 'center' }}>
-                  ¿No tienes cuenta? <Link href="/registro/pareja">Créala gratis</Link> y guarda proveedores en tu evento.
-                </span>
-              )}
-              {planner.kind === 'pareja' && (
-                <Link href="/panel" className="hint" style={{ textAlign: 'center' }}>Ver mi evento</Link>
-              )}
-            </aside>
+            {vendor.is_demo ? (
+              <aside className="cta-card">
+                <span className="badge badge-demo" style={{ alignSelf: 'flex-start' }}>Perfil de ejemplo</span>
+                <span style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600 }}>¿Tienes un negocio así?</span>
+                <p className="body" style={{ fontSize: 15 }}>
+                  Así se vería tu negocio en Brindis: fotos, paquetes con precio y tu calendario de fechas libres. El registro es gratis.
+                </p>
+                <Link href="/registro/proveedor" className="btn btn-primary btn-block">Registrar mi negocio</Link>
+                <a
+                  href={`https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(`Hola Brindis, busco opciones de ${(vendor.category || 'proveedores').toLowerCase()} para mi evento.`)}`}
+                  className="btn btn-outline btn-block btn-sm"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Busco opciones como esta
+                </a>
+              </aside>
+            ) : (
+              <aside className="cta-card">
+                <span style={{ fontFamily: 'var(--serif)', fontSize: 24, fontWeight: 600 }}>¿Te gusta para tu evento?</span>
+                {eventDate && (
+                  <span className={`badge ${busyOnDate ? 'badge-wine' : 'badge-ok'}`} style={{ alignSelf: 'flex-start' }}>
+                    {busyOnDate ? 'Ocupado' : 'Libre'} el {formatLongDate(eventDate).toLowerCase()}
+                  </span>
+                )}
+                {!isOwner && planner.kind !== 'vendor' && approved && (
+                  <AddToEventButton vendorId={vendor.id} planner={planner} returnTo={`/proveedores/${vendor.id}${fecha ? `?fecha=${fecha}` : ''}`} size="md" block />
+                )}
+                <p className="body" style={{ fontSize: 15 }}>
+                  Cuéntanos tu fecha y número de invitados. Confirmamos la disponibilidad y te enviamos la cotización por WhatsApp.
+                </p>
+                <a href={`https://wa.me/${CONTACT.whatsapp}?text=${waText}`} className="btn btn-outline btn-block btn-sm" target="_blank" rel="noopener noreferrer">
+                  Pedir cotización por WhatsApp
+                </a>
+                {planner.kind === 'anon' && (
+                  <span className="hint" style={{ textAlign: 'center' }}>
+                    ¿No tienes cuenta? <Link href="/registro/pareja">Créala gratis</Link> y guarda proveedores en tu evento.
+                  </span>
+                )}
+                {planner.kind === 'pareja' && (
+                  <Link href="/panel" className="hint" style={{ textAlign: 'center' }}>Ver mi evento</Link>
+                )}
+              </aside>
+            )}
           </div>
         </div>
       </main>

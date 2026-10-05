@@ -298,3 +298,16 @@ button.cal-day:hover { border-color: var(--wine); }
   .filter-bar { grid-template-columns: minmax(0, 1fr); }
   .saved-row { flex-wrap: wrap; }
 }
+
+/* Perfiles de ejemplo */
+.badge-demo { color: #2E3A59; background: #E4E9F2; }
+.vendor-card-demo { position: absolute; top: 12px; right: 12px; }
+
+/* Galería con pocas fotos: portada + 1 o 2 a la derecha */
+.gallery-compact { grid-template-columns: 2fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); }
+.gallery-compact.gallery-one { grid-template-rows: minmax(0, 1fr); }
+@media (max-width: 860px) {
+  .gallery-compact { grid-template-columns: 1fr 1fr; grid-template-rows: 240px 120px; }
+  .gallery-compact.gallery-one { grid-template-columns: 1fr; grid-template-rows: 240px 160px; }
+  .gallery-compact.gallery-one .gallery-main { grid-column: 1; }
+}
